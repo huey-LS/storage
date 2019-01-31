@@ -1,0 +1,29 @@
+{
+  "name": "storage",
+  "version": "0.1.0",
+  "description": "",
+  "keywords": [
+    "storage",
+    "localStorage",
+    "cookie",
+    "browser"
+  ],
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ignous/storage"
+  },
+  "author": "lsxyz7",
+  "email": "lsxyz7@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "^5.2.0",
+    "puppeteer": "^1.11.0"
+  }
+}
