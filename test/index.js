@@ -1,9 +1,11 @@
-const path = require('path');
-var assert = require('assert');
+const assert = require('assert');
 const puppeteer = require('puppeteer');
+
+const server = require('./server');
 
 describe('localStorage', function () {
   var browser, page, itDone;
+  var currentValue = 'testValue';
 
   it('page ready', (done) => {
     (async () => {
@@ -20,14 +22,14 @@ describe('localStorage', function () {
       })
 
       await page.setCacheEnabled(false);
-      await page.goto('file://' + path.resolve(__dirname, './main.html'));
+      await page.goto('http://127.0.0.1:8080');
 
       await page.exposeFunction('assert', async (value, current) => {
         return assert.equal(value, current);
       })
 
-      await page.exposeFunction('close', async (e) => {
-        await browser.close();
+      await page.exposeFunction('getCurrentValue', async () => {
+        return currentValue;
       })
 
       await page.exposeFunction('done', async (e) => {
@@ -39,7 +41,7 @@ describe('localStorage', function () {
 
       itDone = done;
       await page.evaluate(async () => {
-        var s = new Storage('name', { storageType: 'localStorage' });
+        var s = new Storage.default('name');
         window.s = s;
         await done();
       });
@@ -50,9 +52,12 @@ describe('localStorage', function () {
     (async () => {
       itDone = done;
       await page.evaluate(async () => {
+        var currentValue = await getCurrentValue();
         try {
-          s.set('a');
-          await assert(s.get(), JSON.parse(localStorage.getItem('name')).value)
+          s.set(currentValue);
+          var value = localStorage.getItem('name').split('|')[0];
+          value = JSON.parse(decodeURIComponent(value));
+          await assert(value, currentValue)
           await done()
         } catch (e) {
           await done(e.toString())
@@ -65,10 +70,9 @@ describe('localStorage', function () {
     (async () => {
       itDone = done;
       await page.evaluate(async () => {
-        // console.log(123);
+        var currentValue = await getCurrentValue();
         try {
-          s.set('a');
-          await assert(s.get(), 'a')
+          await assert(s.get(), currentValue)
           await done()
         } catch (e) {
           await done(e.toString())
@@ -81,7 +85,6 @@ describe('localStorage', function () {
     (async () => {
       itDone = done;
       await page.evaluate(async () => {
-        // console.log(123);
         try {
           s.remove();
           await assert(s.get(), null);
@@ -90,6 +93,8 @@ describe('localStorage', function () {
           await done(e.toString())
         }
       });
+
+      await browser.close();
     })();
   });
 
@@ -98,6 +103,7 @@ describe('localStorage', function () {
 
 describe('cookie', function () {
   var browser, page, itDone;
+  var currentValue = 'testValue';
 
   it('page ready', (done) => {
     (async () => {
@@ -114,14 +120,14 @@ describe('cookie', function () {
       })
 
       await page.setCacheEnabled(false);
-      await page.goto('file://' + path.resolve(__dirname, './main.html'));
+      await page.goto('http://127.0.0.1:8080');
 
       await page.exposeFunction('assert', async (value, current) => {
         return assert.equal(value, current);
       })
 
-      await page.exposeFunction('close', async (e) => {
-        await browser.close();
+      await page.exposeFunction('getCurrentValue', async () => {
+        return currentValue;
       })
 
       await page.exposeFunction('done', async (e) => {
@@ -133,7 +139,7 @@ describe('cookie', function () {
 
       itDone = done;
       await page.evaluate(async () => {
-        var s = new Storage('name', { storageType: 'cookie' });
+        var s = new Storage.default('name', { storage: Storage.storages.cookie });
         window.s = s;
         await done();
       });
@@ -144,9 +150,24 @@ describe('cookie', function () {
     (async () => {
       itDone = done;
       await page.evaluate(async () => {
+        var currentValue = await getCurrentValue();
+        var key = 'name';
+        var value;
         try {
-          s.set('a');
-          // await assert(s.get(), JSON.parse(localStorage.getItem('name')).value)
+          s.set(currentValue);
+          var cookies = document.cookie.split(';');
+          var i = 0;
+          var len = cookies.length;
+          var cookie;
+          for (; i < len; i++) {
+            cookie = cookies[i].split('=');
+            if (cookie[0] === key) {
+              value = decodeURIComponent(cookie[1])
+            }
+          }
+          value = value.split('|')[0];
+          value = JSON.parse(decodeURIComponent(value));
+          await assert(value, currentValue)
           await done()
         } catch (e) {
           await done(e.toString())
@@ -159,11 +180,9 @@ describe('cookie', function () {
     (async () => {
       itDone = done;
       await page.evaluate(async () => {
-        console.log(123);
-        console.log(document.cookie);
+        var currentValue = await getCurrentValue();
         try {
-          s.set('a');
-          await assert(s.get(), 'a')
+          await assert(s.get(), currentValue)
           await done()
         } catch (e) {
           await done(e.toString())
@@ -176,7 +195,6 @@ describe('cookie', function () {
     (async () => {
       itDone = done;
       await page.evaluate(async () => {
-        // console.log(123);
         try {
           s.remove();
           await assert(s.get(), null);
@@ -185,8 +203,8 @@ describe('cookie', function () {
           await done(e.toString())
         }
       });
+      await browser.close();
+      server.close();
     })();
   });
-
-  // await done(e)
 })

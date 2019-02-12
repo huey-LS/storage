@@ -1,7 +1,7 @@
 {
-  "name": "storage",
+  "name": "@ignous/storage",
   "version": "0.1.0",
-  "description": "",
+  "description": "browser storage management. support cookie & localStorage",
   "keywords": [
     "storage",
     "localStorage",
@@ -17,13 +17,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ignous/storage"
+    "url": "git+https://github.com/ignous/storage.git"
   },
-  "author": "lsxyz7",
+  "author": "ignous",
   "email": "lsxyz7@gmail.com",
   "license": "MIT",
   "devDependencies": {
     "mocha": "^5.2.0",
     "puppeteer": "^1.11.0"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/ignous/storage/issues"
+  },
+  "homepage": "https://github.com/ignous/storage#readme",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {}
 }

@@ -3,14 +3,16 @@
   typeof define === 'function' && define.amd ? define(factory) :
   (global = global || self, global.Storage = factory());
 }(this, function () { 'use strict';
-  var DEFAULT_STORAGE_TYPE = 'localStorage';
-
   var defaultFormat = {
     stringify: function (value, version) {
-      return JSON.stringify({ value: value, version: version })
+      return encodeURIComponent(JSON.stringify(value)) + '|' + version;
     },
     parse: function (dataString) {
-      return JSON.parse(dataString)
+      var dataArray = dataString ? dataString.split('|') : [];
+      return {
+        value: dataArray[0] && JSON.parse(decodeURIComponent(dataArray[0])),
+        version: dataArray[1]
+      }
     }
   }
 
@@ -28,31 +30,17 @@
     subscribe: subscribeLocalStorageChange
   };
 
-  var supportedStorageType = {
-    'cookie': Cookie,
-    'localStorage': LocalStorage
-  }
-
   var Storage = function (key, options) {
     options = options || {};
     var format = options.format;
-    var storageType = options.storageType;
+    var storage = options.storage || LocalStorage;
     var extraOptions = options.options || {};
+
     this._key = key;
     this._format = format || defaultFormat;
     this._extraOptions = extraOptions;
-    if (typeof storageType === 'string') {
-      if (supportedStorageType[storageType]) {
-        this._storage = supportedStorageType[storageType];
-      } else {
-        this._storage = supportedStorageType[DEFAULT_STORAGE_TYPE];
-      }
-    } else if (storageType) {
-      this._storage = storageType;
-    } else {
-      this._storage = supportedStorageType[DEFAULT_STORAGE_TYPE];
-    }
 
+    this._storage = storage;
     this._dataVersion = this.getStoredDataVersion();
   };
 
@@ -111,7 +99,16 @@
   }
 
 
-  return Storage;
+  return {
+    default: Storage,
+    storages: {
+      cookie: Cookie,
+      localStorage: LocalStorage
+    },
+    formats: {
+      default: defaultFormat
+    }
+  };
 
   // localStorage
   function setLocalStorage (key, value) {
@@ -130,7 +127,7 @@
     var fn = function (e) {
       e = e || window.event;
       if (!e.key) {
-        // ie8 没有key, 自动相应一次
+        // ie8 没有key, 自动响应一次
         setTimeout(function () {
           callback();
         }, 0)
@@ -200,7 +197,7 @@
   }
 
   function getCookie (key) {
-    var cookies = document.cookie.split(";");
+    var cookies = document.cookie.split(';');
     var i = 0;
     var len = cookies.length;
     var cookie;
